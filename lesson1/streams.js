@@ -19,3 +19,4 @@ const writeStream = fs.createWriteStream('./copyBigData.txt');
 // ? Piping
 // piping does the above in a neat way
 readStream.pipe(writeStream);
+
