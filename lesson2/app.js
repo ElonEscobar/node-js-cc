@@ -1,11 +1,20 @@
 const express = require('express');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
+const Blog = require('./models/blog');
+const { result } = require('lodash');
 
 // express app
 const app = express();
 
-// listen for requests
-app.listen(3000);
+// connect to mongodb
+const dbURI = 'mongodb+srv://don:netninja123@nodetuts.uc9njt4.mongodb.net/?retryWrites=true&w=majority'
+// deprecation warn, { newUserUrlParser: true, useUnifiedTopology: true }
+mongoose.connect(dbURI)
+    .then((res) => app.listen(3000))
+    .catch((err) => console.error(err));
+
+
 // set- is used to make configurations
 app.set('view engine', 'ejs');
 
@@ -31,6 +40,36 @@ app.use(morgan('dev'))
 
 app.use(express.static('public'))
 
+// middleware to get data from the input fields
+app.use(express.urlencoded({ extended: true }))
+
+
+// mongo and mongoose sandbox routes
+// app.get('/add-blog', (req, res) => {
+//     const blog = new Blog({
+//         title: 'New blog',
+//         snippet: 'about new blog',
+//         body: 'more about this blog'
+//     })
+//     blog.save()
+//         .then((result) => res.send(result))
+//         .catch((err)=> console.log(err));
+// })
+
+// app.get('/all-blogs', (req, res) => {
+//     Blog.find()
+//         .then((result) => res.send(result))
+//         .catch((err) => console.log(err));
+// })
+
+// app.get('/single-blog', (req, res) => {
+//     Blog.findById('6492b5e0019187254a15b2b6')
+//         .then((result) => res.send(result))
+//         .catch((err) => console.log(err));
+// })
+
+
+
 app.get('/', (req, res)=> {
     // res.send(`<p>Express App</p>`)
     // res.sendFile('./views/index.html', { root: __dirname })
@@ -38,16 +77,7 @@ app.get('/', (req, res)=> {
     //? sendfile takes in a relative path and checks its from the root of the machine
     // hence we also include a object with root attr set to the relative path of the project
 
-    const blogs = [
-        {title: 'Avatar', snippet: 'The last air bender'},
-        {title: 'Avengers', snippet: 'Marvel MCU'},
-        {title: 'The Incredibles', snippet: 'Supes'},
-        {title: 'Thundermans', snippet: 'Hiden supes'}
-
-    ]
-
-    res.render('index', { title: 'Home' , blogs})
-    
+    res.redirect('/blogs')
 })
 
 app.get('/about', (req, res)=> {
@@ -57,8 +87,44 @@ app.get('/about', (req, res)=> {
 
 })
 
+app.get('/blogs', (req, res) => {
+    // -1 sorts from the newest
+    Blog.find().sort({ createdAt: -1 })
+        .then((result) => {
+            res.render('index', { title: 'All blogs', blogs: result });
+        })
+        .then((err) => console.log(err));
+})
+
+app.post('/blogs', (req, res)=> {
+    const blog = new Blog(req.body);
+    blog.save()
+        .then((result) => {
+            res.redirect('/blogs')
+        })
+        .then((err) => console.log(err))
+})
+
+app.get('/blogs/:id', (req, res) => {
+    const id = req.params.id;
+    Blog.findById(id)
+        .then((result) => {
+            res.render('details', { blog: result, title: 'Blog details'})
+        })
+        .catch((err) => console.log(err))
+})
+
+app.delete('/blogs/:id', (req, res) => {
+    const id = req.params.id;
+    Blog.findByIdAndDelete(id)
+        .then((result) => {
+            res.json({ redirect: '/blogs'})
+        })
+        .catch((err) => console.log(err))
+})
+
 app.get('/blogs/create', (req, res) => {
-    res.render('create', { title: 'Create' });
+    res.render('create', { title: 'Create new blog' });
 })
 // // redirects
 
