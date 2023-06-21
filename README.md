@@ -1,2 +1,3 @@
 # node-js-cc
-node js crash course
+
+learn node js and implement a simple blog app
